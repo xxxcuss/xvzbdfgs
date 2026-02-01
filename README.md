@@ -105,6 +105,7 @@ python main.py
 ## Evaluation
 
 ```bash
+In eval365.py: set --decoder=hid (or sig, sleep, vine)  --attr=[attribute you want to edit], data_path (line 81) = [watermarked image path]
 python eval365.py
 ```
 
@@ -117,10 +118,58 @@ Metrics include:
 
 ## Reproducing Paper Results
 
-Scripts for reproducing paper figures and tables are provided in:
+###Table 1:
 
-```text
-scripts/
+For DiffusionCLIP on VINE LSUN-Ch. (or LSUN-Bd.)
+
+```bash
+In main.py: set --config=church.yml (or bedroom.yml) --attack=True --decoder=vine --wm_data_path='./data/VINE/church_vine' (or './data/VINE/bedroom_vine') --edit_attr=[attribute you want to edit]
+python main.py
 ```
 
+For DiffusionCLIP on SleeperMark Ch. (or Bd.)
 
+```bash
+In main.py: set --config=church.yml (or bedroom.yml) --attack=True --decoder=sleep --wm_data_path='./data/SleepMark/church_sleep' (or './data/SleepMark/bedroom_sleep') --edit_attr=[attribute you want to edit]
+python main.py
+```
+
+For the rest edit method, repeat the same command in each folder.
+
+###Table 2 & 3:
+
+For DiffusionCLIP on VINE LSUN-Church (or LSUN-Bedroom)
+
+```bash
+In main.py: set --config=church.yml (or bedroom.yml) --attack=True --decoder=vine --wm_data_path='./data/VINE/church_vine' (or './data/VINE/bedroom_vine') --edit_attr=[attribute you want to edit]
+python main.py
+```
+
+For DiffusionCLIP on HiDDeN CelebA (or AFHQ-Dog)
+
+```bash
+In main.py: set --config=celeba.yml (or afhq.yml) --attack=True --decoder=hid --wm_data_path='./data/celeba_hid' (or './data/afhq_hid') --edit_attr=[attribute you want to edit]
+python main.py
+```
+
+For the rest edit method, repeat the same command in each folder.
+
+###Figure 2 & 3:
+
+For DiffusionCLIP on SleeperMark Church (or Bedroom)
+
+```bash
+In main.py: set --config=church.yml (or bedroom.yml) --attack=True --decoder=sleep --wm_data_path='./data/SleepMark/church_sleep' (or './data/SleepMark/bedroom_sleep') --edit_attr=[attribute you want to edit]
+python main.py
+```
+
+For DiffusionCLIP on StableSignature Human (or Dog)
+
+```bash
+In main.py: set --config=celeba.yml (or afhq.yml) --attack=True --decoder=sig --wm_data_path='./data/StableSignature/celeba_sig' (or './data/StableSignature/afhq_hid') --edit_attr=[attribute you want to edit]
+python main.py
+```
+
+For the rest edit method, repeat the same command in each folder.
+
+###Figure 4:
