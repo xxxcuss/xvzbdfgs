@@ -35,7 +35,7 @@ def parse_args_and_config():
     
     parser.add_argument('--data_source', type=str, default='wm', help='wo or wm')
     #parser.add_argument('--wm_dataset', type=str, default='celeba', help='celeba, afhq, bedroom, church')
-    parser.add_argument('--wm_data_path', type=str, default='../wm_data/StableSignature/afhq_sig', help='StableSignature/celeba_sig, celeba_hidden')
+    parser.add_argument('--wm_data_path', type=str, default='../data/StableSignature/afhq_sig', help='StableSignature/celeba_sig, celeba_hidden')
     parser.add_argument('--decoder', type=str, default='sig', help='hid, sig, sleep, vine')
     #parser.add_argument('--wom_data_path', type=str, default='../wm_data/celeba_orig')
 
