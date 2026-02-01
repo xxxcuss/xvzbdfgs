@@ -82,10 +82,23 @@ DiffusionCLIP/
 
 ## Running SafeMark
 
+### Obtain pretrained weights
+
+For example, for diffusionclip on celeba:
+
+```bash
+cd DiffusionCLIP
+In main.py: set config=celeba.yml attack=False attr=[attribute you want to edit]
+python main.py
+```
+
+The weights will be saved into checkpoint folder.
+
 ### DiffusionCLIP Backend
 
 ```bash
 cd DiffusionCLIP
+setting in main.py
 python main.py
 ```
 
@@ -93,6 +106,9 @@ python main.py
 
 ```bash
 cd Asyrp
+In main.py: set --custom_train_dataset_dir='../data/StableSignature/afhq_sig' --custom_test_dataset_dir='../data/StableSignature/afhq_sig' (take StableSignature AFHQ-Dog as an example)
+python main.py --lpips
+In main.py: set --config='custom_sig_afhq.yml'
 python main.py
 ```
 
@@ -100,6 +116,7 @@ python main.py
 
 ```bash
 cd eff-diff-edit
+setting in main.py
 python main.py
 ```
 
