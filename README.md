@@ -1,2 +1,2 @@
-# xvzbdfgs
-Code for SafeMark
+# SafeMark: Editing-Agnostic and Watermark-Safe Text-Guided Image Manipulation
+
