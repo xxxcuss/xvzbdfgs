@@ -19,7 +19,7 @@ SafeMark is editing-agnostic and can be integrated into multiple diffusion-based
 ## Repository Structure
 
 ```text
-xvzbdfgs/
+/
 ├── Asyrp/
 ├── DiffusionCLIP/
 ├── eff-diff-edit/
