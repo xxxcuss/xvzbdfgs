@@ -34,7 +34,7 @@ def parse_args_and_config():
     parser.add_argument('--data_source', type=str, default='wm', help='wo or wm')
     #parser.add_argument('--wm_dataset', type=str, default='celeba', help='celeba, afhq, bedroom, church')
     parser.add_argument('--decoder', type=str, default='hid', help='hid, sig, sleep, vine')
-    parser.add_argument('--wm_data_path', type=str, default='../wm_data/afhq_hid')
+    parser.add_argument('--wm_data_path', type=str, default='../data/afhq_hid')
     #parser.add_argument('--wom_data_path', type=str, default='../wm_data/celeba_orig')
 
     parser.add_argument('--p_crop', type=float, default=0.0)
