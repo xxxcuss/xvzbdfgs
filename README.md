@@ -175,6 +175,7 @@ For the rest edit method, repeat the same command in each folder.
 ###Figure 4:
 
 ```bash
+cd DiffusionCLIP
 In main.py: set --config=celeba.yml --attack=True --decoder=hid --wm_data_path='./data/celeba_hid' --edit_attr=[attribute you want to edit] --p_crop=1.0 (or other distortions)
 python main.py
 ```
