@@ -61,7 +61,7 @@ def normalize_for_decoder(img):
     img = ((img + 1) * 0.5).clamp(0, 1)            # 转到 [0, 1]
     return (img-mean) / std
     
-def calculate_acc(folder, de):
+def calculate_acc(folder, de, path):
     if de == 'sig':
         decoder = torch.jit.load("./pretrained/dec_48b_whit.torchscript.pt").to("cuda").eval()
         bit_str = '111010110101000001010111010011010100010000100111'
@@ -78,7 +78,7 @@ def calculate_acc(folder, de):
         print(unexpected_keys)
         target_msg = torch.Tensor(np.random.choice([0, 1], (1, 48))).cuda()
 
-    for sub in ['../../../wm_data/StableSignature/afhq_sig', 'pre', 'wm']:
+    for sub in [path, 'pre', 'wm']:
         name = folder + '/' + sub
         train_dataset = AccDataset(name, de=de, sub=sub)
         loader = DataLoader(train_dataset, batch_size=1, shuffle=False, num_workers=4)
@@ -149,7 +149,8 @@ if __name__ == '__main__':
     
     decoder = 'sig'
     attr = 'dog_nicolas_sig'
-    calculate_acc('./out/'+attr, decoder)
+    data_path = '../data/StableSignature/celeba_sig'
+    calculate_acc('./out/'+attr, decoder, path)
     #prepare_blur(attr)
 
     #src_list = ['/retain/orig', '/retain/orig', '/forget/orig', '/forget/orig']
