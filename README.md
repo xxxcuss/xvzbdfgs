@@ -105,7 +105,7 @@ python main.py
 ## Evaluation
 
 ```bash
-In eval365.py: set --decoder=hid (or sig, sleep, vine)  --attr=[attribute you want to edit], data_path (line 81) = [watermarked image path]
+In eval365.py: set --decoder=hid (or sig, sleep, vine)  --attr=[attribute you want to edit], --data_path=[watermarked image path]
 python eval365.py
 ```
 
@@ -173,3 +173,8 @@ python main.py
 For the rest edit method, repeat the same command in each folder.
 
 ###Figure 4:
+
+```bash
+In main.py: set --config=celeba.yml --attack=True --decoder=hid --wm_data_path='./data/celeba_hid' --edit_attr=[attribute you want to edit] --p_crop=1.0 (or other distortions)
+python main.py
+```
