@@ -24,13 +24,13 @@ def parse_args_and_config():
     # LPIPS
     parser.add_argument('--lpips', action="store_true")
     parser.add_argument('--custom_dataset_name', type=str, default="sig_afhq")
-    parser.add_argument('--custom_train_dataset_dir', type=str, default="../wm_data/StableSignature/afhq_sig")
-    parser.add_argument('--custom_test_dataset_dir', type=str, default="../wm_data/StableSignature/afhq_sig")
+    parser.add_argument('--custom_train_dataset_dir', type=str, default="../data/StableSignature/afhq_sig")
+    parser.add_argument('--custom_test_dataset_dir', type=str, default="../data/StableSignature/afhq_sig")
 
     
     parser.add_argument('--data_source', type=str, default='wm', help='wo or wm')
     #parser.add_argument('--wm_dataset', type=str, default='celeba', help='celeba, afhq, bedroom, church')
-    parser.add_argument('--wm_data_path', type=str, default='../wm_data/StableSignature/afhq_sig', help='StableSignature/celeba_sig, celeba_hidden')
+    parser.add_argument('--wm_data_path', type=str, default='../data/StableSignature/afhq_sig', help='StableSignature/celeba_sig, celeba_hidden')
     parser.add_argument('--decoder', type=str, default='sig', help='hid, sig, sleep, vine')
     #parser.add_argument('--wom_data_path', type=str, default='../wm_data/celeba_orig')
     parser.add_argument('--edit_attr', type=str, default='dog_nicolas', help='Attribute to edit defiend in ./utils/text_dic.py')
