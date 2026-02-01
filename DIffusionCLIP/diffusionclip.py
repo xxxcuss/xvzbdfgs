@@ -14,6 +14,9 @@ import torchvision.utils as tvu
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from base_dataset import BaseDataset
+from diffusers import AutoencoderKL
+from torchvision import transforms
+import data_augmentation
 
 from models.ddpm.diffusion import DDPM
 from models.improved_ddpm.script_util import i_DDPM
@@ -68,6 +71,18 @@ class DiffusionCLIP(object):
         img = ((img + 1) * 0.5).clamp(0, 1)            # 转到 [0, 1]
         return (img-mean) / std
     
+    def img_to_DMlatents(self, img):
+        img = ((img + 1) * 0.5).clamp(0, 1)
+        img = F.interpolate(img, size=512, mode='bilinear', align_corners=False)
+        img = img * 2 - 1
+        posterior = self.sleep_vae.encode(img).latent_dist
+        return posterior.sample() * 0.18215
+    
+    def vine_trans(self, img):
+        img = ((img + 1) * 0.5).clamp(0, 1)
+        img = F.interpolate(img, size=256, mode='bilinear', align_corners=False)
+        return img
+
     def clip_finetune(self):
         print(self.args.exp)
         print(f'   {self.src_txts}')
@@ -246,13 +261,29 @@ class DiffusionCLIP(object):
             print(unexpected_keys)
             encoder = encoder_decoder.encoder
             decoder = encoder_decoder.decoder
-
             g = torch.Generator().manual_seed(1234) #self.args.seed
             target_msg = torch.randint(0, 2, (1, self.args.num_bits), generator=g).float().to(self.device)
         elif self.args.decoder == 'sig':
             decoder = torch.jit.load("./pretrained/dec_48b_whit.torchscript.pt").to("cuda").eval()
             bit_str = '111010110101000001010111010011010100010000100111'
             target_msg = torch.tensor([float(b) for b in bit_str], device='cuda:0').unsqueeze(0)
+        elif self.args.decoder == 'sleep':
+            decoder = wm_encoder_decoder.Extractor_forLatent(secret_size=48)
+            decoder.load_state_dict(torch.load(self.args.sleep_decoder_path))
+            decoder = decoder.to("cuda").eval()
+            target_msg = torch.load('./pretrained/sleep_secret.pt').to("cuda")
+            self.sleep_vae = AutoencoderKL.from_pretrained('CompVis/stable-diffusion-v1-4', subfolder="vae").cuda()
+        elif self.args.decoder == 'vine':
+            decoder = wm_encoder_decoder.CustomConvNeXt.from_pretrained('Shilin-LU/VINE-R-Dec')
+            decoder = decoder.to("cuda").eval()
+            message = 'Hello World!'
+            data = bytearray(message + ' ' * (12 - len(message)), 'utf-8')
+            packet_binary = ''.join(format(x, '08b') for x in data)
+            watermark = [int(x) for x in packet_binary]
+            watermark.extend([0, 0, 0, 0])
+            watermark = torch.tensor(watermark, dtype=torch.float).unsqueeze(0)
+            target_msg = watermark.to("cuda")
+            
 
         print('Target message: ', target_msg)
 
@@ -264,10 +295,10 @@ class DiffusionCLIP(object):
             clip_loss_func.target_direction = None
 
             iter_accs, iter_accs_orig = [], []
-            if self.args.decoder == 'hid':
+            if self.args.decoder == 'hid' or self.args.decoder == 'vine':
                 save_name = './checkpoint/pretrained_'+self.args.edit_attr+'_dclip.pth' ###
             else:
-                save_name = './checkpoint/pretrained_'+self.args.edit_attr+'_'+self.args.decoder+'_dclip.pth' ###
+                save_name = './checkpoint/pretrained_'+self.args.edit_attr+'_'+'sig'+'_dclip.pth' ###sig
 
             if self.args.attack:
                 pre_model = deepcopy(model)
@@ -276,6 +307,11 @@ class DiffusionCLIP(object):
                 pre_model.eval()
 
             # ----------- Train -----------#
+            self.data_aug = data_augmentation.HiddenAug(256, self.args.p_crop, self.args.p_blur, \
+                        self.args.p_jpeg, self.args.p_rot, self.args.p_color, self.args.p_res).to("cuda")
+            self.data_aug_eval = data_augmentation.HiddenAugEval(256, self.args.p_crop, self.args.p_blur, \
+                        self.args.p_jpeg, self.args.p_rot, self.args.p_color, self.args.p_res).to("cuda")
+        
             for it_out in range(self.args.n_iter):
                 exp_id = os.path.split(self.args.exp)[-1]
                 if self.args.do_train:
@@ -321,11 +357,20 @@ class DiffusionCLIP(object):
                                     probs = decoder(self.normalize_for_decoder(x))
                                     sim = 1 - (probs - target_msg) ** 2
                                     loss_wm = F.relu(self.args.threshold - sim).mean()
-                                    pred_bits = (probs > 0.5).float()
+                                    pred_bits = (probs > 0.5).float() ###
                                     bit_accs = (pred_bits == target_msg).float().mean(dim=-1)
                                 elif self.args.decoder == 'hid':
-                                    logits = decoder(x)
-                                    pred = torch.sigmoid(logits)
+                                    pred = torch.sigmoid(decoder(x))
+                                    sim = 1 - (pred - target_msg) ** 2
+                                    bit_accs = sim.mean(dim=-1)
+                                    loss_wm = F.relu(self.args.threshold - bit_accs).mean()
+                                elif self.args.decoder == 'sleep':
+                                    pred = torch.sigmoid(decoder(self.img_to_DMlatents(x)))
+                                    sim = 1 - (pred - target_msg) ** 2
+                                    bit_accs = sim.mean(dim=-1)
+                                    loss_wm = F.relu(self.args.threshold - bit_accs).mean()
+                                elif self.args.decoder == 'vine':
+                                    pred = decoder(self.vine_trans(x))
                                     sim = 1 - (pred - target_msg) ** 2
                                     bit_accs = sim.mean(dim=-1)
                                     loss_wm = F.relu(self.args.threshold - bit_accs).mean()
@@ -344,7 +389,7 @@ class DiffusionCLIP(object):
                                 loss_l1 = nn.L1Loss()(x0, x)
                                 loss_wm = 0.0
                             
-                            warm_start = 3
+                            warm_start = 0
                             wm_weight = self.args.wm_loss_w * max(0, min(1.0, (it_out+1-warm_start)/(self.args.n_iter-warm_start)))
                             loss = self.args.clip_loss_w * loss_clip + self.args.id_loss_w * loss_id + \
                                    self.args.l1_loss_w * loss_l1 + wm_weight * loss_wm
@@ -405,25 +450,29 @@ class DiffusionCLIP(object):
                             print(f"Eval {step}-{it_out}")
 
                             if self.args.attack:
-                                if it_out == self.args.n_iter-1:
+                                #if it_out == self.args.n_iter-1:
                                     #add_name = '_wo_wm'
-                                    save_dir = self.args.edit_attr + '_' + self.args.decoder
-                                    
-                                    if not os.path.exists(os.path.join('./out', save_dir, 'orig')):
-                                        os.makedirs(os.path.join('./out', save_dir, 'orig'))
-                                    tvu.save_image((x0 + 1) * 0.5, os.path.join('./out', save_dir, 'orig', f'{step}_{it_out}.png'))
-                                    if not os.path.exists(os.path.join('./out', save_dir, 'pre')):
-                                        os.makedirs(os.path.join('./out', save_dir, 'pre'))
-                                    tvu.save_image((x_pre + 1) * 0.5, os.path.join('./out', save_dir, 'pre', f'{step}_{it_out}.png'))
-                                    if not os.path.exists(os.path.join('./out', save_dir, self.args.data_source)):
-                                        os.makedirs(os.path.join('./out', save_dir, self.args.data_source))
-                                    tvu.save_image(((x + 1) * 0.5).clamp(0,1), os.path.join('./out', save_dir, self.args.data_source, f'{step}_{it_out}.png'))
+                                save_dir = self.args.edit_attr + '_' + self.args.decoder + '_figure'
                                 
+                                if not os.path.exists(os.path.join('./out', save_dir, 'orig')):
+                                    os.makedirs(os.path.join('./out', save_dir, 'orig'))
+                                tvu.save_image((x0 + 1) * 0.5, os.path.join('./out', save_dir, 'orig', f'{step}_{it_out}.png'))
+                                if not os.path.exists(os.path.join('./out', save_dir, 'pre')):
+                                    os.makedirs(os.path.join('./out', save_dir, 'pre'))
+                                tvu.save_image((x_pre + 1) * 0.5, os.path.join('./out', save_dir, 'pre', f'{step}_{it_out}.png'))
+                                if not os.path.exists(os.path.join('./out', save_dir, self.args.data_source)):
+                                    os.makedirs(os.path.join('./out', save_dir, self.args.data_source))
+                                tvu.save_image(((x + 1) * 0.5).clamp(0,1), os.path.join('./out', save_dir, self.args.data_source, f'{step}_{it_out}.png'))
                                 
                                 if self.args.decoder == 'sig':
                                     fts = decoder(self.normalize_for_decoder(x))
                                 elif self.args.decoder == 'hid':
                                     fts = decoder(x)
+                                elif self.args.decoder == 'sleep':
+                                    fts = decoder(self.img_to_DMlatents(x))
+                                elif self.args.decoder == 'vine':
+                                    fts = decoder(self.vine_trans(x))
+
                                 pred_bits = (fts > 0.5).float()        # 预测 bit
                                 target_bits = target_msg.float()            # 目标 bit
                                 bit_accs = (pred_bits == target_bits).float().mean(dim=-1)
@@ -433,6 +482,11 @@ class DiffusionCLIP(object):
                                     fts = decoder(self.normalize_for_decoder(x0))
                                 elif self.args.decoder == 'hid':
                                     fts = decoder(x0)
+                                elif self.args.decoder == 'sleep':
+                                    fts = decoder(self.img_to_DMlatents(x0))
+                                elif self.args.decoder == 'vine':
+                                    fts = decoder(self.vine_trans(x0))
+
                                 pred_bits = (fts > 0.5).float()        # 预测 bit
                                 target_bits = target_msg.float()            # 目标 bit
                                 bit_accs = (pred_bits == target_bits).float().mean(dim=-1)

@@ -25,19 +25,27 @@ def parse_args_and_config():
     #Attack
     parser.add_argument('--attack', type=bool, default=True, help='Whether to do attacking.')
     parser.add_argument('--encoder_decoder_path', type=str, default='./pretrained/wm--epoch-261.pyt')
-    parser.add_argument('--wm_loss_w', type=float, default=0.5) #0.3 celeba, 0.5 afhq
-    parser.add_argument('--threshold', type=float, default=0.9)
+    parser.add_argument('--sleep_decoder_path', type=str, default='./pretrained/sleep_decoder.pth')
+    parser.add_argument('--wm_loss_w', type=float, default=1.0) #0.3 celeba, 0.5 afhq
+    parser.add_argument('--threshold', type=float, default=1.0)
     parser.add_argument('--num_bits', type=int, default=48)
-    parser.add_argument('--n_iter', type=int, default=5, help='# of iterations of a generative process with `n_train_img` images (5)')
+    parser.add_argument('--n_iter', type=int, default=10, help='# of iterations of a generative process with `n_train_img` images (5)')
 
     parser.add_argument('--data_source', type=str, default='wm', help='wo or wm')
     #parser.add_argument('--wm_dataset', type=str, default='celeba', help='celeba, afhq, bedroom, church')
-    parser.add_argument('--decoder', type=str, default='sig', help='hid, sig, sleep, vine')
-    parser.add_argument('--wm_data_path', type=str, default='../wm_data/StableSignature/afhq_sig')
+    parser.add_argument('--decoder', type=str, default='hid', help='hid, sig, sleep, vine')
+    parser.add_argument('--wm_data_path', type=str, default='../wm_data/afhq_hid')
     #parser.add_argument('--wom_data_path', type=str, default='../wm_data/celeba_orig')
 
+    parser.add_argument('--p_crop', type=float, default=0.0)
+    parser.add_argument('--p_blur', type=float, default=0.0)
+    parser.add_argument('--p_jpeg', type=float, default=0.0)
+    parser.add_argument('--p_rot', type=float, default=0.0)
+    parser.add_argument('--p_color', type=float, default=0.0)
+    parser.add_argument('--p_res', type=float, default=0.0)
+
     # Text
-    parser.add_argument('--edit_attr', type=str, default='dog_nicolas', help='Attribute to edit defiend in ./utils/text_dic.py')
+    parser.add_argument('--edit_attr', type=str, default='dog_anime', help='Attribute to edit defiend in ./utils/text_dic.py')
     parser.add_argument('--src_txts', type=str, action='append', help='Source text e.g. Face')
     parser.add_argument('--trg_txts', type=str, action='append', help='Target text e.g. Angry Face')
     parser.add_argument('--target_class_num', type=str, default=None)
@@ -63,7 +71,7 @@ def parse_args_and_config():
     parser.add_argument('--l1_loss_w', type=float, default=3, help='Weights of L1 loss')#1 normal, 3 attack
     parser.add_argument('--id_loss_w', type=float, default=0, help='Weights of ID loss')
     parser.add_argument('--clip_model_name', type=str, default='ViT-B/16', help='ViT-B/16, ViT-B/32, RN50x16 etc')
-    parser.add_argument('--lr_clip_finetune', type=float, default=8e-6, help='Initial learning rate for finetuning')
+    parser.add_argument('--lr_clip_finetune', type=float, default=8e-5, help='Initial learning rate for finetuning')#8e-6
     parser.add_argument('--lr_clip_lat_opt', type=float, default=2e-2, help='Initial learning rate for latent optim')
     parser.add_argument('--scheduler', type=int, default=1, help='Whether to increase the learning rate')
     parser.add_argument('--sch_gamma', type=float, default=1.3, help='Scheduler gamma')
