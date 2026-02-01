@@ -5,6 +5,7 @@ Official implementation of SafeMark, a framework for watermark-preserving text-g
 ## Overview
 
 Diffusion-based image editing enables flexible semantic manipulation but often destroys embedded watermarks, undermining image provenance and attribution.  
+
 SafeMark integrates watermark preservation directly into the editing process, enabling semantic image manipulation while maintaining watermark integrity across heterogeneous editors.
 
 SafeMark is editing-agnostic and can be integrated into multiple diffusion-based editing frameworks.
